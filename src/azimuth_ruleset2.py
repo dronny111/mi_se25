@@ -8,6 +8,7 @@ Feel free to tweak the weights – they match the published values.
 
 import re
 from typing import List
+import math
 
 # ------------------------------------------------------------------
 #  Helper routines
@@ -17,6 +18,9 @@ def gc_frac(seq: str) -> float:
 
 def has_reverse_complement(seq: str, rev: str) -> bool:
     return seq == rev
+
+def logistic_transform(x: float) -> float:
+    return 1.0 / (1.0 + math.exp(-x))
 
 # ------------------------------------------------------------------
 #  Rule set – each entry is (weight, lambda(seq, pos) -> bool)
@@ -90,5 +94,7 @@ def rule_set2_score(spacer: str) -> float:
     # add position‑specific weights that are not embedded in RULES
     pos10 = spacer[9]
     score += POS10_TABLE.get(pos10, 0.0)
+
+    score = logistic_transform(score)  # apply logistic transform
 
     return score

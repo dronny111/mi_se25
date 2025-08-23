@@ -1,96 +1,103 @@
 #!/usr/bin/env python3
 """
-Generate every 20‑nt protospacer that satisfies the NGG PAM (SpCas9) and score it
-with the real Doench/Azimuth model that is available from the Microsoft
-Research package “azimuth”.
+Generate every NGG guide from a CDS, compute a Doench Rule‑Set 2 score,
+(optionally) apply a sigmoid transform, and write a CSV that now also
+contains a micro‑homology repair‑outcome prediction.
 """
 
 import re
-import numpy as np
 from pathlib import Path
 import pandas as pd
+
 from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord  # ← keep the earlier import for reverse complements
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
-
+# -------------------------------------------------
+# 1.  Scoring (Rule‑Set 2) and repair outcome
+# -------------------------------------------------
 from azimuth_ruleset2 import rule_set2_score
+from repair_pred import predict_repair_outcome, serialize_outcome
 
+# -------------------------------------------------
+# 2.  Core helpers (unchanged)
+# -------------------------------------------------
+PAM_REGEX = re.compile(r"[ATGC]GG")   # NGG
 
-# ------------------------------------------------------------
-# Primer utilities
-# ------------------------------------------------------------
-PAM_RE = re.compile(r"[ATGC]GG")   # 5'NGG
+def _rev_comp(seq: str) -> str:
+    return str(Seq(seq).reverse_complement())
 
-def reverse_complement(seq: str) -> str:
-    return str(SeqRecord(seq).reverse_complement())
-
-def find_guides(seq: str, strand: int = 1):
-    """Return a list of dicts describing each protospacer on a single strand."""
+def _find_guides_on_strand(seq: str, strand: str) -> list[dict]:
     guides = []
-    for m in PAM_RE.finditer(seq):
-        pam_start, pam_end = m.span()
-
-        if strand == 1:                       # + strand → spacer upstream of PAM
-            start = pam_start - 20
-            if start < 0:                    # not enough nt upstream
-                continue
-            spacer = seq[start:pam_start]
-        else:                                 # – strand → spacer downstream of PAM
-            end = pam_end + 20
-            if end > len(seq):
-                continue
-            spacer = seq[pam_start:pam_end]
-            spacer = reverse_complement(spacer)
-
+    for m in PAM_REGEX.finditer(seq):
+        pam_start = m.start()
+        if pam_start < 20:
+            continue
+        protospacer = seq[pam_start - 20:pam_start]
         guides.append({
-            "spacer": spacer,
-            "pam": seq[pam_start:pam_end],
-            "start": start if strand == 1 else pam_end,
-            "end": pam_start if strand == 1 else end,
-            "strand": "+" if strand == 1 else "-",
+            "protospacer": protospacer,
+            "pam": seq[pam_start:pam_start + 3],
+            "genomic_start": pam_start - 20,
+            "genomic_end":   pam_start + 3,
+            "strand": strand
         })
     return guides
 
-import math
-def logistic(score):
-    return 1/(1+math.exp(-score))
 
-# ------------------------------------------------------------
-# Real Azimuth scoring
-# ------------------------------------------------------------
-def azimuth_score(spacer: str) -> float:
-    score = rule_set2_score(spacer)
+# -------------------------------------------------
+# 3.  Main driver – generate, score, (optional) sigmoid,
+#     predict repair outcome, write CSV
+# -------------------------------------------------
+def generate_guides_from_cds_fasta(cds_fasta: Path,
+                                   out_csv: Path
+                                   ) -> None:
+    """
+    Parameters
+    ----------
+    cds_fasta : Path
+        FASTA containing the *coding* DNA of SlAREB1.
+    out_csv : Path
+        Where the guide table (including scores & repair prediction) will be written.
+    apply_sigmoid : bool
+        If True the raw Rule‑Set 2 score is passed through a sigmoid so the
+        column ``score`` lies in (0, 1).  Set False to keep the raw value.
+    """
+    # -----------------------------------------------------------------
+    # 1) Load the CDS (robust version that also works if the FASTA has >1 record)
+    # -----------------------------------------------------------------
+    cds_path_str = str(cds_fasta)
+    try:
+        record = SeqIO.read(cds_path_str, "fasta")
+    except ValueError:                     # >1 record → just take the first
+        record = next(SeqIO.parse(cds_path_str, "fasta"))
+    seq = str(record.seq).upper()
 
-    score = logistic(score)
+    # -----------------------------------------------------------------
+    # 2) Enumerate guides on both strands
+    # -----------------------------------------------------------------
+    guides = _find_guides_on_strand(seq, "+")
+    rev_seq = _rev_comp(seq)
+    guides += _find_guides_on_strand(rev_seq, "-")
+
+    # -----------------------------------------------------------------
+    # 3) Score each guide (Rule‑Set 2) and predict the repair outcome
+    # -----------------------------------------------------------------
+    for g in guides:
+        raw = rule_set2_score(g["protospacer"])
+
+
+        g["score"] = raw
+
+
+        # ---- repair outcome (micro‑homology model) -----------------
+        outcome = predict_repair_outcome(g["protospacer"])
+        # Store the JSON string – it will appear as a single column in the CSV.
+        g["predicted_outcome"] = serialize_outcome(outcome)
+
+    df = pd.DataFrame(guides)
     
-    return float(score) if score is not None else -float("inf")
+    num_scored = df["score"].notna().sum()
 
-# ------------------------------------------------------------
-# Generate guides + score
-# ------------------------------------------------------------
-def generate_guides_from_fasta(in_path: Path, out_path: Path):
-    """Creates a CSV with every valid guide and its Azimuth score."""
-    with open(in_path) as f:
-        record = SeqIO.read(f, "fasta")
-    seq = str(record.seq)
+    df[df["score"].notna()].to_csv(out_csv, index=False)
 
-    all_guides = []
-    for strand in (1, -1):
-        all_guides.extend(find_guides(seq, strand=strand))
-
-    df = pd.DataFrame(all_guides)
-    # Add a proper one‑column score column
-    df["score"] = df["spacer"].apply(azimuth_score)
-    df.to_csv(out_path, index=False)
-    print(f"Saved {len(df)} guides to {out_path}")
-
-# ------------------------------------------------------------
-# CLI driver (kept the same as before)
-# ------------------------------------------------------------
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Generate SpCas9 guides for SlAREB1.")
-    parser.add_argument("in_fasta", type=Path, help="CDS FASTA file")
-    parser.add_argument("out_csv", type=Path, help="Output CSV")
-    args = parser.parse_args()
-    generate_guides_from_fasta(args.in_fasta, args.out_csv)
+    print(f"✅  Saved {len(df)} guides (scored {num_scored}) to {out_csv}")

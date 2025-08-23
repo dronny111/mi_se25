@@ -15,18 +15,18 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_absolute_error
 import tensorflow as tf
-from tensorflow import layers, models, callbacks
+from tensorflow.keras import layers, models, callbacks
 
 # ------------------------------
 # Utility to load data
 # ------------------------------
 def load_data():
     feat_path = Path("data/features/SlAREB1_features.csv")
-    spacer_path = Path("data/guides/SlAREB1_guides.csv")  # contains the original spacer
+    spacer_path = Path("data/guides/SlAREB1_guides_rule2.csv")  # contains the original protospacer
     feat_df = pd.read_csv(feat_path)
     spacer_df = pd.read_csv(spacer_path)
     # one‑hot encode
-    onehot = np.array([np.eye(4)[list("ACGT".index(c) for c in s)] for s in spacer_df["spacer"]])
+    onehot = np.array([np.eye(4)[list("ACGT".index(c) for c in s)] for s in spacer_df["protospacer"]])
     # target – use column “score” from guide generator
     target = spacer_df["score"].values
     return feat_df, onehot, target
@@ -34,8 +34,7 @@ def load_data():
 # ------------------------------
 # 1. Tabular model
 # ------------------------------
-def train_tabular():
-    X, onehot, y = load_data()
+def train_tabular(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=42)
 
     rf = RandomForestRegressor(n_estimators=300, random_state=42, n_jobs=-1)
@@ -44,7 +43,7 @@ def train_tabular():
     print("Random Forest R2:", r2_score(y_test, preds))
     print("MAE:", mean_absolute_error(y_test, preds))
     # Save
-    Path("models/rf.pkl").write_bytes(pickle.dumps(rf))
+    # Path("models/rf.pkl").write_bytes(pickle.dumps(rf))
 
 # ------------------------------
 # 2. CNN model
@@ -61,8 +60,7 @@ def build_cnn():
     model.compile(optimizer='adam', loss='mse')
     return model
 
-def train_cnn():
-    X_tab, onehot, y = load_data()
+def train_cnn(onehot, y):
     X_train, X_test, y_train, y_test = train_test_split(onehot, y, test_size=.2, random_state=42)
 
     model = build_cnn()
@@ -74,7 +72,7 @@ def train_cnn():
     print("CNN R2:", r2_score(y_test, preds))
     print("CNN MAE:", mean_absolute_error(y_test, preds))
     # Save
-    model.save("models/cnn_slareb1.h5")
+    # model.save("models/cnn_slareb1.h5")
 
 # ------------------------------
 # Main
