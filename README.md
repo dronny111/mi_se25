@@ -22,13 +22,12 @@ The output is a list of (5‑10 guides) ready for wet‑lab validation.
 1. Prerequisites
 
 Python 3.11+
-git (to clone)
-≈ 8 GB RAM (the pipeline runs comfortably on a laptop)
+Git installed
 2. Installation
 
 # Clone the repository
-git clone https://github.com/yourusername/MISE-2025.git
-cd MISE-2025
+git clone https://github.com/yourusername/mi-se25.git
+cd mi_se25
 
 # Create a virtual environment
 python -m venv .venv
@@ -39,15 +38,9 @@ pip install -r env/requirements.txt
 3. Run the full workflow
 
 python -m src.main
-The script executes the five stages sequentially and prints a progress bar.
+The script executes the five stages sequentially and plots all graphs.
 
-Generated files
 
-File	Description
-data/guides/SlAREB1_guides_raw.csv	All 57 candidate guides with raw Doench scores & MHEJ outcome JSON
-data/guides/SlAREB1_guides_rl_selected.csv	Short‑list (posterior mean, α, β, etc.)
-models/rf.pkl	RandomForest trained on tabular guide features (demo)
-models/cnn_slareb1.h5	1‑D CNN trained on one‑hot spacers (demo)
 🧩 Stage‑by‑Stage Overview
 
 Stage	Module	Main output	Quick note
