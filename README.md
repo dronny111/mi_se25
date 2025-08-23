@@ -17,38 +17,6 @@ Predicts the repair‑outcome distribution using a micro‑homology‑mediated e
 Selects the optimal guide(s) with a Thompson‑sampling RL bandit that maximises frameshift and efficiency.
 The output is a list of (5‑10 guides) ready for wet‑lab validation.
 
-📂 Repository Layout
-
-mi_se25/
-│
-├─ data/                     # CSVs generated at each stage
-│   ├─ guides/
-│   │   ├─ SlAREB1_guides.csv
-│   │   └─ SlAREB1_guides_rl_selected.csv
-│   └─ features/             # Optional feature tables
-│
-├─ env/                      # requirements.txt
-│
-├─ notebooks/
-│   └─ analysis.ipynb        # Example exploratory notebook
-│
-├─ src/
-│   ├─ fetcher.py            # Stage 1 – download CDS
-│   ├─ guide.py              # Stage 2 – enumerate & score guides
-│   ├─ repair_prediction.py  # Stage 3 – MHEJ model
-│   ├─ rl_guide_selection.py# Stage 4 – Thompson‑sampling bandit
-│   ├─ feature.py            # Stage 5 – optional feature extraction
-│   ├─ model.py              # Demo RandomForest / 1‑D CNN
-│   └─ main.py               # One‑command wrapper (runs all stages)
-│
-├─ scripts/
-│   └─ data_fetcher.sh       # Legacy bash wrapper for Stage 1
-│
-├─ models/
-│   ├─ rf.pkl                # Trained RandomForest (demo)
-│   └─ cnn_slareb1.h5        # Trained 1‑D CNN (demo)
-│
-└─ README.md                 # **THIS FILE**
 🚀 Getting Started
 
 1. Prerequisites
