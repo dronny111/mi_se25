@@ -41,7 +41,7 @@ python -m src.main
 The script executes the five stages sequentially and plots all graphs.
 
 
-🧩 Stage‑by‑Stage Overview
+🧩 # Stage‑by‑Stage Overview
 
 Stage	Module	Main output	Quick note
 1 – Data acquisition	src.fetcher	SlAREB1.fa (CDS)	Pulls from Sol Genomics API (https://solgenomics.net/api/v1/sequence/download/single/17806894)
@@ -49,7 +49,9 @@ Stage	Module	Main output	Quick note
 3 – Repair‑outcome prediction	src.repair_prediction	Adds column predicted_outcome (JSON list of (type, size, prob))	MHEJ model assumes only micro‑homology; see Limitations.
 4 – RL guide selection	src.rl_guide_selection	guides_rl_selected.csv (α, β, posterior_mean)	Posterior mean = expected reward = (frameshift × efficiency).
 5 – Optional ML demo	src.model	rf.pkl, cnn_slareb1.h5 + console metrics	Purely illustrative; not required for the ISEF deliverable.
-⚠️ Limitations & Future Work
+
+
+⚠️ # Limitations & Future Work
 
 Repair model – Only micro‑homology deletions are modelled; real NHEJ can give larger insertions or complex events.
 Off‑target analysis – Not yet integrated. Future versions will call CRISPOR or Cas‑OFFinder and add an off‑target arm to the bandit for multi‑objective optimisation.
