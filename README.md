@@ -48,7 +48,6 @@ Stage	Module	Main output	Quick note
 2 – Guide enumeration & scoring	src.guide	guides_raw.csv (protospacer, PAM, strand, raw_score, sigmoid_score)	Replace the placeholder doench_score with a real implementation for production use.
 3 – Repair‑outcome prediction	src.repair_prediction	Adds column predicted_outcome (JSON list of (type, size, prob))	MHEJ model assumes only micro‑homology; see Limitations.
 4 – RL guide selection	src.rl_guide_selection	guides_rl_selected.csv (α, β, posterior_mean)	Posterior mean = expected reward = (frameshift × efficiency).
-5 – Optional ML demo	src.model	rf.pkl, cnn_slareb1.h5 + console metrics	Purely illustrative; not required for the ISEF deliverable.
 
 
 ⚠️ Limitations & Future Work
@@ -60,5 +59,3 @@ Off‑target analysis – Not yet integrated. Future versions will call CRISPOR 
 Experimental validation – The pipeline stops at in silico selection. Wet‑lab results (NGS indel frequencies) will be fed back to update the Thompson‑sampling posteriors (online learning).
 
 Scalability – The same workflow can be applied genome‑wide to other ABA‑related TFs or to other crops.
-
-Model upgrades – Swap the 1‑D CNN for a transformer or 2‑D CNN that consumes the full PAM‑spacer context for higher predictive power.
