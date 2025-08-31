@@ -1,4 +1,4 @@
-📚 MISE 2026 – AI-driven Lab-in-the-Loop Workflow for CRISPR-mediated Saline-Tolerance in Tomato
+Designing Halophytic S. Lycopersicum using CRISPR-Cas9 and AI Optimized gRNA Selection
 
 By: Dhruv Jain (Grade 11, Lincoln Community School)
 
