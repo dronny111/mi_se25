@@ -50,9 +50,13 @@ python -m src.main
 The script executes the five stages sequentially and plots all graphs.
 
 
-🧩 Stage‑by‑Stage Overview
+# Stage‑by‑Stage Overview
+
 1 – Data acquisition	src.fetcher	SlAREB1.fasta (CDS)	Pulls from Sol Genomics API (https://solgenomics.net/api/v1/sequence/download/single/17806894)
+
 2 – Guide enumeration & scoring	src.guide	guides_raw.csv (protospacer, PAM, strand, raw_score, sigmoid_score)	Replace the placeholder doench_score with a real implementation for production use.
+
 3 – Repair‑outcome prediction	src.repair_prediction	Adds column predicted_outcome (JSON list of (type, size, prob))	MHEJ model assumes only micro‑homology; see Limitations.
+
 4 – RL guide selection	src.rl_guide_selection	guides_rl_selected.csv (α, β, posterior_mean)	Posterior mean = expected reward = (frameshift × efficiency).
 
